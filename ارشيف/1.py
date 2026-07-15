@@ -3,3 +3,4 @@ mo= (int (name))
 mk =int(name [0])
 ms = int(name [1])
 print(mk + ms)
+#مشروع جمع رقمين باسورد 
