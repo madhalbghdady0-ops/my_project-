@@ -1,0 +1,5 @@
+name =input(" enter your password numper ")
+mo= (int (name))
+mk =int(name [0])
+ms = int(name [1])
+print(mk + ms)
