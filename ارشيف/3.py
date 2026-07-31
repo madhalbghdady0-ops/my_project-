@@ -1,13 +1,13 @@
-لطول=int(input("ادخل طول الغرفه ؟ \n"))
-العرض=int(input ("ادخل عرض الغرفه ؟ \n "))
-السعر=int( input(" سعر المتر كم ؟ \n"))
-مساحه=int( ( الطول * العرض ))
-حساب= int((السعر * مساحه))
-شاشه =input( print("1 = المساحه or  التكلفه=2"))
+long=int(input("How long is the room? \n"))
+Width=int(input ("How wide is the room? \n "))
+price=int( input("How much is the price per meter? \n"))
+Area=int( ( long * Width ))
+price= int(( price * Area ))
+شاشه =input( print("1 =Area  or  price = 2"))
 if شاشه == "1":
-        print ( مساحه )
+        print ( Area )
 elif شاشه == "2":
-        print( حساب )
+        print( price  )
 else :
-        print ("اسف لم افهمك اعد المحاوله")
+        print ("I'm sorry, I didn't understand you. Please try again.")
 #مشروع حساب مساحه غرفه وتكلفتها 
