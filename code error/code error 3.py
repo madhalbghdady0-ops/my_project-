@@ -19,7 +19,7 @@ elif Mi == (6,11) :
         pr="tails"
 else :
      mu=input("Please try again and choose (1 or 2) :")
-mlk=input("The computer is expected to choose (heads or tails) :").lower   
+mlk=input("The computer is expected to choose (heads or tails) :").lower()   
 if Mi == (1,5) or mo == 0.5 and mlk== "heads" :
      print ('Yes, you are the winner.')
 elif Mi ==  (6,11) or mo > 0.5 or mlk == "tails" :
