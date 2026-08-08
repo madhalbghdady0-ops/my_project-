@@ -25,4 +25,3 @@ The computer choice : tails .
 ''')
 else :
     print (' try again you lost ')
-                
