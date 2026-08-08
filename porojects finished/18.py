@@ -24,5 +24,5 @@ elif Guess ==0.51 <= random.random() <= 0.999 or 6 <= random.randint(1,11) >= 11
 The computer choice : tails .
 ''')
 else :
-    print (' you lost ')
+    print (' try again you lost ')
                 
