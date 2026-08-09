@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime, timedelta
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -83,25 +83,22 @@ def get_contact_link():
 
 # --- محرك الحسابات الذكي (الماكروز والسعرات) ---
 def calculate_macros(age, height, weight, gender, goal, target_weight):
-    """
-    حساب السعرات الحرارية والبروتين والكارب والدهون بدقة بناءً على البيانات والهدف.
-    """
     if gender.lower() in ['male', 'ولد', 'ذكر']:
         bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5
     else:
         bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
 
     if goal.lower() in ['bulking', 'تضخيم']:
-        calories = int(bmr * 1.35) + 400  # فائض سعرات نظيف
-        protein = int(weight * 2.0)     # بروتين عالي للبناء
-        fats = int(weight * 0.9)        # دهون صحية
+        calories = int(bmr * 1.35) + 400
+        protein = int(weight * 2.0)
+        fats = int(weight * 0.9)
         remaining_calories = calories - ((protein * 4) + (fats * 9))
         carbs = max(int(remaining_calories / 4), 50)
         advice = f"الهدف: تضخيم للوصول إلى {target_weight} كجم. التركيز على زيادة الأوزان تدريجياً وفائض سعرات نظيف."
-    else:  # تنشيف Cutting
-        calories = int(bmr * 1.2) - 400   # عجز سعرات للحرق
-        protein = int(weight * 2.2)     # بروتين مرتفع للحفاظ على العضلات
-        fats = int(weight * 0.7)        # دهون صحية معتدلة
+    else:
+        calories = int(bmr * 1.2) - 400
+        protein = int(weight * 2.2)
+        fats = int(weight * 0.7)
         remaining_calories = calories - ((protein * 4) + (fats * 9))
         carbs = max(int(remaining_calories / 4), 50)
         advice = f"الهدف: تنشيف للوصول إلى {target_weight} كجم. التزام بعجز السعرات والكارديو المنتظم."
@@ -114,7 +111,7 @@ def calculate_macros(age, height, weight, gender, goal, target_weight):
         "advice": advice
     }
 
-# --- دالة فحص اشتراكات الأعضاء تلقائياً وتنبيههم ---
+# --- فحص الاشتراكات تلقائياً ---
 async def check_subscriptions_job(context: ContextTypes.DEFAULT_TYPE):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -135,7 +132,7 @@ async def check_subscriptions_job(context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
-# --- محادثة تسجيل بيانات اشتراك الـ VIP الجديدة ---
+# --- محادثة تسجيل بيانات الـ VIP الجديدة ---
 async def vip_reg_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -211,7 +208,6 @@ async def vip_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     macros = calculate_macros(age, height, weight, gender, goal, target_weight)
     
-    # الرد على المشترك
     await update.message.reply_text(
         f"✅ تم تسجيل بياناتك بنجاح يا وحش!\n"
         f"🎯 هدفك: {goal} | الوزن المستهدف: {target_weight} كجم\n\n"
@@ -224,7 +220,6 @@ async def vip_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
     
-    # البحث عن جروب الأدمن أو إرساله للمالكين
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute("SELECT user_id FROM owners")
@@ -255,7 +250,7 @@ async def vip_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     return ConversationHandler.END
 
-# --- محادثة إضافة مقترح لتطوير الخدمة والمنصة (الإضافة المنفصلة المعزولة تماماً) ---
+# --- محادثة مقترحات تطوير الخدمة والمنصة ---
 async def service_feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -263,7 +258,7 @@ async def service_feedback_start(update: Update, context: ContextTypes.DEFAULT_T
         "يسعدنا جداً سماع أفكارك لتطوير الخدمة والمنصة المقدمة لك.\nاكتب مقترحك أو فكرتك في رسالة واحدة وسيتم إرسالها للإدارة مباشرة:",
         parse_mode="Markdown"
     )
-    return BROADCAST_MSG # نستخدم محادثة مؤقتة لاستقبال النص
+    return BROADCAST_MSG
 
 async def service_feedback_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     feedback_text = update.message.text
@@ -285,7 +280,7 @@ async def service_feedback_finish(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text("❌ حدث خطأ أثناء إرسال المقترح، حاول مرة أخرى لاحقاً.")
     return ConversationHandler.END
 
-# --- باقي المحادثات الأساسية القديمة ---
+# --- باقي المحادثات الأساسية ---
 async def sub_date_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -712,10 +707,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
 
-    # تشغيل مهمة فحص الاشتراكات تلقائياً
     app.job_queue.run_repeating(check_subscriptions_job, interval=86400, first=10)
 
-    # محادثة تسجيل بيانات الـ VIP الجديدة
     vip_reg_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(vip_reg_start, pattern="start_vip_reg")],
         states={
@@ -729,7 +722,6 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel_conv)]
     )
 
-    # محادثة الاقتراحات المنفصلة المعزولة تماماً (يمكن حذفها أو تعديلها بسهولة)
     service_feedback_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(service_feedback_start, pattern="service_feedback_btn")],
         states={
@@ -843,7 +835,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🚀 البوت شغال بالكامل بكل الإضافات والقديم والجديد!")
+    print("🚀 البوت شغال بالكامل وبكل الميزات!")
     app.run_polling()
 
 if __name__ == "__main__":
