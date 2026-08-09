@@ -30,10 +30,9 @@ SUB_UID, SUB_DAYS = range(17, 19)
 REMOVE_USER_STEP = range(19, 20)
 ADD_VIP_UID, ADD_VIP_DAYS = range(20, 22)
 
-# --- مراحل تسجيل بيانات الـ VIP الجديدة (تلقائية بعد القبول) ---
+# --- مراحل تسجيل بيانات الـ VIP الخاصة بالمتدرب حصراً (تبدأ بأمر مستقل /register_data) ---
 VIP_AGE, VIP_HEIGHT, VIP_WEIGHT, VIP_GENDER, VIP_GOAL, VIP_TARGET_WEIGHT = range(22, 28)
 
-# --- تهيئة قاعدة البيانات ---
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -143,6 +142,7 @@ async def check_subscriptions_job(context: ContextTypes.DEFAULT_TYPE):
         except:
             pass
 
+# --- إضافة مشترك VIP بواسطة الأدمن (لا تتدخل نهائياً في بيانات الأدمن) ---
 async def add_vip_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -152,7 +152,7 @@ async def add_vip_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def add_vip_get_uid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["add_vip_uid"] = update.message.text.strip()
-    await update.message.reply_text("📅 أرسل **عدد أيام الاشتراك** (مثلاً: 30 لاشتراك شهر، أو 90 لاشتراك 3 شهور):", parse_mode="Markdown")
+    await update.message.reply_text("📅 أرسل **عدد أيام الاشتراك** للمتدرب (مثلاً: 30 لاشتراك شهر):", parse_mode="Markdown")
     return ADD_VIP_DAYS
 
 async def add_vip_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -170,18 +170,29 @@ async def add_vip_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn.commit()
     conn.close()
     
+    # رسالة التأكيد للأدمن فقط وتنهي محادثته تماماً
     await update.message.reply_text(f"✅ **تمت إضافة وتفعيل المشترك بنجاح!**\n👤 الآيدي: `{uid}`\n📅 ينتهي في: `{end_date}`", parse_mode="Markdown")
     
+    # رسالة تذهب حصرياً للمتدرب تخبره باشتراكه وتطلب منه بدء تسجيل بياناته بالضغط على زر أو أمر خاص
     try:
+        keyboard = [[InlineKeyboardButton("📝 ابدأ تسجيل بياناتك البدنية", callback_data="start_vip_reg")]]
         await context.bot.send_message(
             chat_id=int(uid),
-            text=f"🎉 **مبروك يا وحش! تم قبولك وتفعيل اشتراكك في برنامج التدريب الشخصي.**\nينتهي اشتراكك في تاريخ: `{end_date}`\n\nالآن نبدأ خطوة تسجيل بياناتك البدنية لتصميم النظام.\nمن فضلك أدخل **عمرك** بالأرقام:",
+            text=f"🎉 **مبروك يا وحش! تم قبولك وتفعيل اشتراكك في برنامج التدريب الشخصي.**\nينتهي اشتراكك في تاريخ: `{end_date}`\n\nاضغط على الزر أدناه لبدء تسجيل بياناتك البدنية لتصميم النظام المخصص لك:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
     except:
         pass
         
     return ConversationHandler.END
+
+# --- خطوات إدخال البيانات الخاصة بالمتدرب وحده (تبدأ فقط عند ضغطه للزر الخاص به) ---
+async def vip_reg_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text("هيا بنا نبدأ! من فضلك أدخل **عمرك** بالأرقام:", parse_mode="Markdown")
+    return VIP_AGE
 
 async def vip_get_age(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -608,7 +619,6 @@ async def cancel_conv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ تم إلغاء العملية الحالية.")
     return ConversationHandler.END
 
-# --- واجهة البداية واللوحات الذكية (مع منع تكرار زر التواصل) ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
@@ -667,7 +677,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         keyboard = []
         
-        # [تعديل أساسي]: عدم تكرار زر التواصل؛ يظهر الانضمام لغير المشترك، ويظهر التواصل للمشترك الساري فقط
         if not subscribed:
             keyboard.append([InlineKeyboardButton("💪 الانضمام لبرنامج التدريب الشخصي", callback_data="buy")])
         else:
@@ -789,8 +798,9 @@ def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.job_queue.run_repeating(check_subscriptions_job, interval=86400, first=10)
 
+    # محادثة تسجيل بيانات المتدرب (تبدأ حصراً عند ضغط المتدرب على زر ابدأ تسجيل بياناتك)
     vip_reg_conv = ConversationHandler(
-        entry_points=[MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex("^([0-9]{1,2})$"), vip_get_age)],
+        entry_points=[CallbackQueryHandler(vip_reg_start, pattern="start_vip_reg")],
         states={
             VIP_AGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, vip_get_age)],
             VIP_HEIGHT: [MessageHandler(filters.TEXT & ~filters.COMMAND, vip_get_height)],
@@ -802,6 +812,7 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel_conv)]
     )
 
+    # محادثة إضافة مشترك VIP من قِبَل الأدمن (تقتصر تماماً على الآيدي وعدد الأيام فقط)
     add_vip_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(add_vip_start, pattern="btn_add_vip")],
         states={
@@ -928,7 +939,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("🚀 البوت جاهز ومنظم بدون تكرار أزرار التواصل!")
+    print("🚀 تم فصل محادثة الأدمن عن المتدرب نهائياً بنجاح!")
     app.run_polling()
 
 if __name__ == "__main__":
