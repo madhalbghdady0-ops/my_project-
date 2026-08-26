@@ -1,0 +1,83 @@
+print("welcome to place the rabbit.")
+rabbit=["🍀","🍀","🍀"]
+rabbit1=["🍀","🍀","🍀"]
+rabbit2=["🍀","🍀","🍀"]
+
+print(rabbit)
+print(rabbit1)
+print(rabbit2)
+choose_rabbit=int(input('where should the rabbit go ?🐇 \n please choose a row and a column \n'))
+if choose_rabbit == 11 :
+    rabbit.remove("🍀")
+    rabbit.insert(0,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit==12 :
+    rabbit.remove("🍀")
+    rabbit.remove("🍀")
+    rabbit.insert(0,"🍀")
+    rabbit.insert(1,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 13 :
+    rabbit.remove("🍀")
+    rabbit.remove("🍀")
+    rabbit.remove("🍀")
+    rabbit.insert(0,"🍀")
+    rabbit.insert(1,"🍀")
+    rabbit.insert(2,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 21 :
+    rabbit1.remove("🍀")
+    rabbit1.insert(0,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 22 :
+    rabbit1.remove("🍀")
+    rabbit1.remove("🍀")
+    rabbit1.insert(0,"🍀")
+    rabbit1.insert(1,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 23 :
+    rabbit1.remove("🍀")
+    rabbit1.remove("🍀")
+    rabbit1.remove("🍀")
+    rabbit.insert(0,"🍀")
+    rabbit.insert(1,"🍀")
+    rabbit.insert(2,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 31 :
+    rabbit2.remove("🍀")
+    rabbit2.insert(0,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 32 :
+    rabbit2.remove("🍀")
+    rabbit2.remove("🍀")
+    rabbit2.insert(0,"🍀")
+    rabbit2.insert(1,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+elif choose_rabbit == 33 :
+    rabbit2.remove("🍀")
+    rabbit2.remove("🍀")
+    rabbit2.remove("🍀")
+    rabbit2.insert(0,"🍀")
+    rabbit2.insert(1,"🍀")
+    rabbit2.insert(2,"🐇")
+    print(rabbit)
+    print(rabbit1)
+    print(rabbit2)
+else :
+    exit
